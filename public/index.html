@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Compartir Ubicación</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    #map {
+      height: 400px;
+    }
+  </style>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const socket = io();
+
+      // Crear el mapa y agregarlo al contenedor
+      const map = L.map('map').setView([0, 0], 2);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
+        maxZoom: 18,
+      }).addTo(map);
+
+      // Mantener un objeto de marcadores para las ubicaciones compartidas
+      const markers = {};
+
+      // Obtener referencia al botón de compartir ubicación
+      const shareLocationButton = document.querySelector('#shareLocation');
+
+      // Manejar el evento de clic en el botón de compartir ubicación
+      shareLocationButton.addEventListener('click', () => {
+        if (!navigator.geolocation) {
+          return alert('Geolocalización no soportada por tu navegador');
+        }
+
+        // Obtener la ubicación actual del usuario
+        navigator.geolocation.getCurrentPosition((position) => {
+          const { latitude, longitude } = position.coords;
+
+          // Enviar la ubicación al servidor
+          socket.emit('shareLocation', { latitude, longitude });
+        });
+      });
+
+      // Manejar el evento de recibir ubicación compartida
+      socket.on('locationShared', (location) => {
+        console.log('Ubicación recibida:', location);
+
+        // Obtener las coordenadas de la ubicación
+        const { latitude, longitude } = location;
+
+        // Crear un marcador con las coordenadas
+        const marker = L.marker([latitude, longitude]).addTo(map);
+
+        // Agregar el marcador al objeto de marcadores
+        markers[socket.id] = marker;
+      });
+
+      // Manejar el evento de desconexión de sockets
+      socket.on('disconnect', () => {
+        // Eliminar el marcador correspondiente al cliente desconectado
+        if (markers.hasOwnProperty(socket.id)) {
+          markers[socket.id].remove();
+          delete markers[socket.id];
+        }
+      });
+    });
+  </script>
+</head>
+<body>
+  <h1>Compartir Ubicación</h1>
+  <button id="shareLocation">Compartir Ubicación</button>
+  <div id="map"></div>
+</body>
+</html>
