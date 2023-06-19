@@ -10,12 +10,14 @@ const io = socketIO(server);
 
 // Ruta principal
 app.get('/', (req, res) => {
+  console.log(__dirname)
   res.sendFile(__dirname + '/public/index.html');
 });
 
 // Manejar la conexión de sockets
 io.on('connection', (socket) => {
   console.log('Un cliente se ha conectado');
+  console.log(__dirname)
 
   // Manejar el evento de compartir ubicación
   socket.on('shareLocation', (location) => {
