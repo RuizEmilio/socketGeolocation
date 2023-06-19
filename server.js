@@ -14,6 +14,8 @@ app.get('/', (req, res) => {
   res.sendFile(__dirname + '/public/index.html');
 });
 
+app.use('/socket.io', express.static(__dirname + '/public'));
+
 // Manejar la conexión de sockets
 io.on('connection', (socket) => {
   console.log('Un cliente se ha conectado');
